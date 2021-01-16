@@ -3,6 +3,7 @@ package org.lamw.appintentdemolaunchapp;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -322,6 +323,34 @@ Sending Data: Extras vs. URI Parameters
  
    public String GetDataUriAsString(Intent _intent) { //The same as getData(), but returns the URI as an encoded String.	   
  	  return _intent.getDataString();               //inverse: Uri.parse(...) creates a Uri which parses the given encoded URI string.
+   }
+
+   public Uri[] GetUriFromClipData(Intent _intent) {
+      ArrayList<Uri> uris = new ArrayList<Uri>();
+		ClipData clipData = _intent.getClipData();
+		if (clipData != null) {
+			for (int i = 0; i < clipData.getItemCount(); i++) {
+				ClipData.Item item = clipData.getItemAt(i);
+            Uri uri = item.getUri();
+            uris.add(uri);
+			}
+      }
+      Uri uriItems[] = uris.toArray(new Uri[uris.size()]);
+		return uriItems;
+   }
+
+   public String[] GetUriFromClipDataAsString(Intent _intent) {
+      ArrayList<String> uris = new ArrayList<String>();
+		ClipData clipData = _intent.getClipData();
+		if (clipData != null) {
+			for (int i = 0; i < clipData.getItemCount(); i++) {
+				ClipData.Item item = clipData.getItemAt(i);
+            Uri uri = item.getUri();
+            uris.add(uri.toString());
+			}
+      }
+      String uriItems[] = uris.toArray(new String[uris.size()]);
+		return uriItems;
    }
 
    /*OnResult ...
@@ -690,6 +719,10 @@ Sending Data: Extras vs. URI Parameters
          
      } else return null;   
      
+   }
+
+   public String GetActionAllowMultipleAsString() {	      //allow multiple selection    
+      return "android.intent.extra.ALLOW_MULTIPLE";
    }
    
    public String GetActionImageCaptureAsString() {

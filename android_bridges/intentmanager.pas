@@ -77,6 +77,8 @@ jIntentManager = class(jControl)
     procedure SetDataUri(_dataUri: jObject);
     function GetDataUri(_intent: jObject): jObject;
     function GetDataUriAsString(_intent: jObject): string;
+    function GetUriFromClipData(_intent: jObject): TDynArrayOfJObject;
+    function GetUriFromClipDataAsString(_intent: jObject): TDynArrayOfString;
     procedure PutExtraFile(_environmentDirectoryPath: string; _fileName: string);  overload;
     procedure PutExtraImage( _bmp : jObject; _title : string ); // by ADiV
     procedure PutExtraMailSubject(_mailSubject: string);
@@ -105,6 +107,7 @@ jIntentManager = class(jControl)
     function GetTelUri(): jObject;   overload;
     function GetTelUri(_telNumber: string): jObject;  overload;
     function GetActionGetContentUri(): string;
+    function GetActionAllowMultipleAsString(): string;
     procedure PutExtraFile(_uri: jObject);  overload;
     function GetActionCallAsString(): string;
     function GetContactNumber(_contactUri: jObject): string;
@@ -175,6 +178,8 @@ function jIntentManager_GetExtraString(env: PJNIEnv; _jintentmanager: JObject; _
 procedure jIntentManager_SetDataUri(env: PJNIEnv; _jintentmanager: JObject; _dataUri: jObject);
 function jIntentManager_GetDataUri(env: PJNIEnv; _jintentmanager: JObject; _intent: jObject): jObject;
 function jIntentManager_GetDataUriAsString(env: PJNIEnv; _jintentmanager: JObject; _intent: jObject): string;
+function jIntentManager_GetUriFromClipData(env: PJNIEnv; _jintentmanager: JObject; _intent: jObject): TDynArrayOfJObject;
+function jIntentManager_GetUriFromClipDataAsString(env: PJNIEnv; _jintentmanager: JObject; _intent: jObject): TDynArrayOfString;
 procedure jIntentManager_PutExtraMailCCs(env: PJNIEnv; _jintentmanager: JObject; var _mailCCs: TDynArrayOfString);
 procedure jIntentManager_PutExtraMailBCCs(env: PJNIEnv; _jintentmanager: JObject; var _mailBCCs: TDynArrayOfString);
 procedure jIntentManager_PutExtraMailTos(env: PJNIEnv; _jintentmanager: JObject; var _mailTos: TDynArrayOfString);
@@ -508,6 +513,20 @@ begin
    Result:= jIntentManager_GetDataUriAsString(FjEnv, FjObject, _intent);
 end;
 
+function jIntentManager.GetUriFromClipData(_intent: jObject): TDynArrayOfJObject;
+begin
+  //in designing component state: result value here...
+  if FInitialized then
+   Result:= jIntentManager_GetUriFromClipData(FjEnv, FjObject, _intent);
+end;
+
+function jIntentManager.GetUriFromClipDataAsString(_intent: jObject): TDynArrayOfString;
+begin
+  //in designing component state: result value here...
+  if FInitialized then
+   Result:= jIntentManager_GetUriFromClipDataAsString(FjEnv, FjObject, _intent);
+end;
+
 procedure jIntentManager.PutExtraFile(_environmentDirectoryPath: string; _fileName: string);
 begin
   //in designing component state: set value here...
@@ -695,6 +714,13 @@ begin
   //in designing component state: result value here...
   if FInitialized then
    Result:= jni_func_out_t(FjEnv, FjObject, 'GetActionGetContentUri');
+end;
+
+function jIntentManager.GetActionAllowMultipleAsString(): string;
+begin
+  //in designing component state: result value here...
+  if FInitialized then
+   Result:= jni_func_out_t(FjEnv, FjObject, 'GetActionAllowMultipleAsString');
 end;
 
 procedure jIntentManager.PutExtraFile(_uri: jObject);
@@ -1436,6 +1462,66 @@ begin
   env^.DeleteLocalRef(env, jCls);
 end;
 
+function jIntentManager_GetUriFromClipData(env: PJNIEnv; _jintentmanager: JObject; _intent: jObject): TDynArrayOfJObject;
+var
+  jParams: array[0..0] of jValue;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+  jResultArray: jObject;
+  resultSize: jSize;
+  i: integer;
+  jObj: jObject;
+begin
+  jParams[0].l:= _intent;
+  jCls:= env^.GetObjectClass(env, _jintentmanager);
+  jMethod:= env^.GetMethodID(env, jCls, 'GetUriFromClipData', '(Landroid/content/Intent;)[Landroid/net/Uri;');
+  jResultArray:= env^.CallObjectMethodA(env, _jintentmanager, jMethod, @jParams);
+  if jResultArray <> nil then
+  begin
+    resultSize:= env^.GetArrayLength(env, jResultArray);
+    SetLength(Result, resultSize);
+    for i:= 0 to resultsize - 1 do
+    begin
+      jObj:= env^.GetObjectArrayElement(env, jresultArray, i);
+      Result[i]:= jObj;
+    end;
+  end;
+  env^.DeleteLocalRef(env, jCls);
+end;
+
+function jIntentManager_GetUriFromClipDataAsString(env: PJNIEnv; _jintentmanager: JObject; _intent: jObject): TDynArrayOfString;
+var
+  jBoo: JBoolean;
+  jParams: array[0..0] of jValue;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+  jResultArray: jObject;
+  resultSize: jSize;
+  i: integer;
+  jStr: jObject;
+begin
+  jParams[0].l:= _intent;
+  jCls:= env^.GetObjectClass(env, _jintentmanager);
+  jMethod:= env^.GetMethodID(env, jCls, 'GetUriFromClipDataAsString', '(Landroid/content/Intent;)[Ljava/lang/String;');
+  jResultArray:= env^.CallObjectMethodA(env, _jintentmanager, jMethod, @jParams);
+  if jResultArray <> nil then
+  begin
+    resultSize:= env^.GetArrayLength(env, jResultArray);
+    SetLength(Result, resultSize);
+    for i:= 0 to resultsize - 1 do
+    begin
+      jStr:= env^.GetObjectArrayElement(env, jresultArray, i);
+      case jStr = nil of
+         True : Result[i]:= '';
+         False: begin
+                  jBoo:= JNI_False;
+                  Result[i]:= string( env^.GetStringUTFChars(env, jStr, @jBoo));
+                end;
+      end;
+    end;
+  end;
+  env^.DeleteLocalRef(env, jCls);
+end;
 
 procedure jIntentManager_PutExtraMailCCs(env: PJNIEnv; _jintentmanager: JObject; var _mailCCs: TDynArrayOfString);
 var

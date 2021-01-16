@@ -63,6 +63,7 @@ import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -2168,6 +2169,29 @@ class jForm {
 		} else {
 		 return "";	
 		}	
+	}
+
+	//by emthreex
+	public String[] CopyFilesFromIntent(Intent _intent, String _outputDir) {
+	
+		ArrayList<String> files = new ArrayList<String>();
+		ClipData clipData = _intent.getClipData();
+		if (clipData != null) {
+			for (int i = 0; i < clipData.getItemCount(); i++) {
+				ClipData.Item item = clipData.getItemAt(i);
+				Uri uri = item.getUri();
+				String file = CopyFileFromUri(uri, _outputDir);
+				files.add(file);
+			}
+		} else {
+			Uri uri = _intent.getData();
+			if (uri != null) {
+				String file = CopyFileFromUri(uri, _outputDir);
+				files.add(file);
+			}
+		}	
+		String sItems[] = files.toArray(new String[files.size()]);
+		return sItems;
 	}
 
 	public void RunOnUiThread(final int _tag) {

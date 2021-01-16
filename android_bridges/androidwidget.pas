@@ -1230,6 +1230,7 @@ type
     function GetInternalAppStoragePath: string;
     function CopyFile(srcFullFilename: string; destFullFilename: string): boolean;
     function CopyFileFromUri(srcUri: jObject; destDir: string): string;
+    function CopyFilesFromIntent(intent: jObject; destDir: string): TDynArrayOfString;
     function LoadFromAssets(fileName: string): string;
     function IsSdCardMounted: boolean;
 
@@ -1758,6 +1759,8 @@ Procedure jForm_FreeLayout              (env:PJNIEnv; Layout    : jObject);
 Procedure jForm_SetEnabled2             (env:PJNIEnv;Form    : jObject; enabled : Boolean);
 
 function jForm_CopyFileFromUri(env: PJNIEnv;  _jform: JObject; _srcUri : JObject; _destDir: string): string;
+
+function jForm_CopyFilesFromIntent(env: PJNIEnv;  _jform: JObject; intent : JObject; _destDir: string): TDynArrayOfString;
 
 function jForm_GetImageFromAssetsFile(env: PJNIEnv; _jform: JObject; _assetsImageFileName: string): jObject;
 
@@ -3711,6 +3714,13 @@ begin
  Result:= '';
  if FInitialized then
    Result:= jForm_CopyFileFromUri(FjEnv, FjObject, srcUri, destDir);
+end;
+
+//by emthreex
+function jForm.CopyFilesFromIntent(intent: jObject; destDir: string): TDynArrayOfString;
+begin
+ if FInitialized then
+   Result:= jForm_CopyFilesFromIntent(FjEnv, FjObject, intent, destDir);
 end;
 
 function jForm.LoadFromAssets(fileName: string): string;
@@ -6746,6 +6756,42 @@ begin
   _jMethod:= env^.GetMethodID(env, _jCls, 'CopyFileFromUri', '(Landroid/net/Uri;Ljava/lang/String;)Ljava/lang/String;');
   _jString:= env^.CallObjectMethodA(env, _jform, _jMethod,@_jParams);
   Result:= GetPStringAndDeleteLocalRef(env, _jString);
+  env^.DeleteLocalRef(env,_jParams[1].l);
+  env^.DeleteLocalRef(env, _jCls);
+end;
+
+function jForm_CopyFilesFromIntent(env: PJNIEnv;  _jform: JObject; intent : JObject; _destDir: string): TDynArrayOfString;
+var
+   _jCls: jClass;
+   _jMethod: jmethodID;
+   _jParams : Array[0..1] of jValue;
+   jResultArray: jObject;
+   resultSize: jSize;
+   i: integer;
+   jStr: jObject;
+   jBoo: jBoolean;
+begin
+ _jParams[0].l:= intent;
+ _jParams[1].l:= env^.NewStringUTF(env, pchar(_destDir) );
+  _jCls := env^.GetObjectClass(env, _jform);
+  _jMethod:= env^.GetMethodID(env, _jCls, 'CopyFilesFromIntent', '(Landroid/content/Intent;Ljava/lang/String;)[Ljava/lang/String;');
+  jResultArray:= env^.CallObjectMethodA(env, _jform, _jMethod,@_jParams);
+  if jResultArray <> nil then
+  begin
+    resultSize:= env^.GetArrayLength(env, jResultArray);
+    SetLength(Result, resultSize);
+    for i:= 0 to resultsize - 1 do
+    begin
+      jStr:= env^.GetObjectArrayElement(env, jresultArray, i);
+      case jStr = nil of
+        True : Result[i]:= '';
+        False: begin
+                  jBoo:= JNI_False;
+                  Result[i]:= string( env^.GetStringUTFChars(env, jStr, @jBoo));
+                end;
+      end;
+    end;
+  end;
   env^.DeleteLocalRef(env,_jParams[1].l);
   env^.DeleteLocalRef(env, _jCls);
 end;
