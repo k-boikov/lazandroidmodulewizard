@@ -8,6 +8,7 @@ interface
 
 uses
   Classes,
+  bluetoothlowenergy,
   netapi,
   barcodegen,
   ussdservice,
@@ -131,6 +132,7 @@ begin
   {$I jbluetooth_icon.lrs}
   {$I jbluetoothclientsocket_icon.lrs}
   {$I jbluetoothserversocket_icon.lrs}
+  {$I jbluetoothlowenergy_icon.lrs}
   {$I jsqlitedataaccess_icon.lrs}
   {$I jsqlitecursor_icon.lrs}
   {$I joraclejdbcconnection_icon.lrs}
@@ -198,6 +200,7 @@ begin
       jBluetooth,
       jBluetoothClientSocket,
       jBluetoothServerSocket,
+      jBluetoothLowEnergy,
       jSqliteDataAccess,
       jSqliteCursor,
       jOracleJDBCConnection,

@@ -1,4 +1,4 @@
-package org.lamw.appcompatnavigationdrawerdemo1;
+package org.lamw.applistviewdemo8;
 
 import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
@@ -155,7 +155,7 @@ public class jPanel extends RelativeLayout {
 		@Override
 		public boolean onDown(MotionEvent event) {
 			//Log.i("Down", "------------");
-			controls.pOnDown(PasObj, Const.Click_Default);
+			controls.pOnDown(PasObj);
 			return true;
 		}
 		
@@ -163,20 +163,21 @@ public class jPanel extends RelativeLayout {
 		public boolean onSingleTapUp(MotionEvent e) {
 			//Log.i("Click", "------------");
 			controls.pOnClick(PasObj, Const.Click_Default);
+			controls.pOnUp(PasObj);
 			return true;
 		}
 		
 		@Override
 		public boolean onDoubleTap(MotionEvent e) {
 			//Log.i("DoubleTap", "------------");
-			controls.pOnDoubleClick(PasObj, Const.Click_Default);
+			controls.pOnDoubleClick(PasObj);
 			return true;
 		}
 		
 		@Override
 		public void onLongPress(MotionEvent e) {
 			//Log.i("LongPress", "------------");			
-			controls.pOnLongClick(PasObj, Const.Click_Default);
+			controls.pOnLongClick(PasObj);
 		}			
 
 		@Override

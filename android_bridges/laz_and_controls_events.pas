@@ -8,13 +8,15 @@ uses
    Classes, SysUtils, And_jni;
 
    // AdMob Events
-   procedure Java_Event_pOnAdMobLoaded(env: PJNIEnv; this: jobject; Obj: TObject);
-   procedure Java_Event_pOnAdMobFailedToLoad(env: PJNIEnv; this: jobject; Obj: TObject; errorCode: integer);
-   procedure Java_Event_pOnAdMobOpened(env: PJNIEnv; this: jobject; Obj: TObject);
-   procedure Java_Event_pOnAdMobClosed(env: PJNIEnv; this: jobject; Obj: TObject);
-   procedure Java_Event_pOnAdMobLeftApplication(env: PJNIEnv; this: jobject; Obj: TObject);
-   procedure Java_Event_pOnAdMobClicked(env: PJNIEnv; this: jobject; Obj: TObject);
+   procedure Java_Event_pOnAdMobLoaded(env: PJNIEnv; this: jobject; Obj: TObject; admobType : integer);
+   procedure Java_Event_pOnAdMobFailedToLoad(env: PJNIEnv; this: jobject; Obj: TObject; admobType, errorCode: integer);
+   procedure Java_Event_pOnAdMobOpened(env: PJNIEnv; this: jobject; Obj: TObject; admobType : integer);
+   procedure Java_Event_pOnAdMobClosed(env: PJNIEnv; this: jobject; Obj: TObject; admobType : integer);
+   procedure Java_Event_pOnAdMobLeftApplication(env: PJNIEnv; this: jobject; Obj: TObject; admobType : integer);
+   procedure Java_Event_pOnAdMobClicked(env: PJNIEnv; this: jobject; Obj: TObject; admobType : integer);
    procedure Java_Event_pOnAdMobInitializationComplete(env: PJNIEnv; this: jobject; Obj: TObject);
+   procedure Java_Event_pOnAdMobRewardedUserEarned(env: PJNIEnv; this: jobject; Obj: TObject);
+   procedure Java_Event_pOnAdMobRewardedFailedToShow(env: PJNIEnv; this: jobject; Obj: TObject; errorCode: integer);
 
    procedure Java_Event_pOnBluetoothEnabled(env: PJNIEnv; this: jobject; Obj: TObject);
    procedure Java_Event_pOnBluetoothDisabled(env: PJNIEnv; this: jobject; Obj: TObject);
@@ -126,7 +128,7 @@ uses
 
    procedure Java_Event_pRadioGroupCheckedChanged(env: PJNIEnv; this: jobject; Obj: TObject; checkedIndex: integer; checkedCaption: JString);
 
-   Procedure Java_Event_pOnClickGeneric(env: PJNIEnv; this: jobject; Obj: TObject; Value: integer);
+   Procedure Java_Event_pOnClickGeneric(env: PJNIEnv; this: jobject; Obj: TObject);
 
    Procedure Java_Event_pOnClickAutoDropDownItem(env: PJNIEnv; this: jobject; Obj: TObject;index: integer; caption: JString);
    procedure Java_Event_pOnChronometerTick(env: PJNIEnv; this: jobject; Obj: TObject; elapsedTimeMillis: JLong);
@@ -177,7 +179,6 @@ uses
 
    Procedure Java_Event_pOnSTabSelected(env: PJNIEnv; this: jobject; Obj: TObject; position: integer;  title: JString);
 
-   Procedure Java_Event_pOnCustomCameraSurfaceCreated(env: PJNIEnv; this: jobject; Obj: TObject);
    Procedure Java_Event_pOnCustomCameraSurfaceChanged(env: PJNIEnv; this: jobject; Obj: TObject; width: integer; height: integer);
    Procedure Java_Event_pOnCustomCameraPictureTaken(env: PJNIEnv; this: jobject; Obj: TObject; picture: JObject;  fullPath: JString);
 
@@ -271,6 +272,12 @@ uses
    //jcToyTimerService
    procedure Java_Event_pOnToyTimerServicePullElapsedTime(env:PJNIEnv;this:JObject;Sender:TObject;elapsedTime:int64);
 
+   procedure Java_Event_pOnBluetoothLEConnected(env:PJNIEnv;this:JObject;Sender:TObject;deviceName:jString;deviceAddress:jString;bondState:integer);
+   procedure Java_Event_pOnBluetoothLEScanCompleted(env:PJNIEnv;this:JObject;Sender:TObject;deviceNameArray:jstringArray;deviceAddressArray:jstringArray);
+   procedure Java_Event_pOnBluetoothLEServiceDiscovered(env:PJNIEnv;this:JObject;Sender:TObject;serviceIndex:integer;serviceUUID:jString;characteristicUUIDArray:jstringArray);
+   procedure Java_Event_pOnBluetoothLECharacteristicChanged(env:PJNIEnv;this:JObject;Sender:TObject;strValue:jString;strCharacteristic:jString);
+   procedure Java_Event_pOnBluetoothLECharacteristicRead(env:PJNIEnv;this:JObject;Sender:TObject;strValue:jString;strCharacteristic:jString);
+
 implementation
 
 uses
@@ -285,7 +292,7 @@ uses
    sadmob, zbarcodescannerview, cmikrotikrouteros, scontinuousscrollableimageview,
    midimanager, copenmapview, csignaturepad, soundpool, gdxform, cmail, sftpclient,
    ftpclient, cbluetoothspp, selectdirectorydialog, mssqljdbcconnection, customspeechtotext,
-   cbillingclient, ctoytimerservice;
+   cbillingclient, ctoytimerservice, bluetoothlowenergy;
 
 function GetString(env: PJNIEnv; jstr: JString): string;
 var
@@ -704,7 +711,7 @@ begin
   end;
 end;
 
-procedure Java_Event_pOnAdMobLoaded(env: PJNIEnv; this: jobject; Obj: TObject);
+procedure Java_Event_pOnAdMobLoaded(env: PJNIEnv; this: jobject; Obj: TObject; admobType: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
@@ -712,7 +719,7 @@ begin
   if Obj is jsAdMob then
   begin
      jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
-     jsAdMob(Obj).GenEvent_OnAdMobLoaded(Obj);
+     jsAdMob(Obj).GenEvent_OnAdMobLoaded(Obj, admobType);
   end;
 end;
 
@@ -728,7 +735,7 @@ begin
   end;
 end;
 
-procedure Java_Event_pOnAdMobClicked(env: PJNIEnv; this: jobject; Obj: TObject);
+procedure Java_Event_pOnAdMobClicked(env: PJNIEnv; this: jobject; Obj: TObject; admobType: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
@@ -736,11 +743,11 @@ begin
   if Obj is jsAdMob then
   begin
      jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
-     jsAdMob(Obj).GenEvent_OnAdMobClicked(Obj);
+     jsAdMob(Obj).GenEvent_OnAdMobClicked(Obj, admobType);
   end;
 end;
 
-procedure Java_Event_pOnAdMobFailedToLoad(env: PJNIEnv; this: jobject; Obj: TObject; errorCode: integer);
+procedure Java_Event_pOnAdMobFailedToLoad(env: PJNIEnv; this: jobject; Obj: TObject; admobType, errorCode: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
@@ -748,11 +755,11 @@ begin
   if Obj is jsAdMob then
   begin
      jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
-     jsAdMob(Obj).GenEvent_OnAdMobFailedToLoad(Obj, errorCode);
+     jsAdMob(Obj).GenEvent_OnAdMobFailedToLoad(Obj, admobType, errorCode);
   end;
 end;
 
-procedure Java_Event_pOnAdMobOpened(env: PJNIEnv; this: jobject; Obj: TObject);
+procedure Java_Event_pOnAdMobOpened(env: PJNIEnv; this: jobject; Obj: TObject; admobType: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
@@ -760,11 +767,11 @@ begin
   if Obj is jsAdMob then
   begin
      jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
-     jsAdMob(Obj).GenEvent_OnAdMobOpened(Obj);
+     jsAdMob(Obj).GenEvent_OnAdMobOpened(Obj, admobType);
   end;
 end;
 
-procedure Java_Event_pOnAdMobClosed(env: PJNIEnv; this: jobject; Obj: TObject);
+procedure Java_Event_pOnAdMobClosed(env: PJNIEnv; this: jobject; Obj: TObject; admobType: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
@@ -772,11 +779,11 @@ begin
   if Obj is jsAdMob then
   begin
      jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
-     jsAdMob(Obj).GenEvent_OnAdMobClosed(Obj);
+     jsAdMob(Obj).GenEvent_OnAdMobClosed(Obj, admobType);
   end;
 end;
 
-procedure Java_Event_pOnAdMobLeftApplication(env: PJNIEnv; this: jobject; Obj: TObject);
+procedure Java_Event_pOnAdMobLeftApplication(env: PJNIEnv; this: jobject; Obj: TObject; admobType: integer);
 begin
   gApp.Jni.jEnv:= env;
   gApp.Jni.jThis:= this;
@@ -784,7 +791,31 @@ begin
   if Obj is jsAdMob then
   begin
      jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
-     jsAdMob(Obj).GenEvent_OnAdMobLeftApplication(Obj);
+     jsAdMob(Obj).GenEvent_OnAdMobLeftApplication(Obj, admobType);
+  end;
+end;
+
+procedure Java_Event_pOnAdMobRewardedUserEarned(env: PJNIEnv; this: jobject; Obj: TObject);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if not Assigned(Obj)  then Exit;
+  if Obj is jsAdMob then
+  begin
+     jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
+     jsAdMob(Obj).GenEvent_OnAdMobRewardedUserEarned(Obj);
+  end;
+end;
+
+procedure Java_Event_pOnAdMobRewardedFailedToShow(env: PJNIEnv; this: jobject; Obj: TObject; errorCode: integer);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if not Assigned(Obj)  then Exit;
+  if Obj is jsAdMob then
+  begin
+     jForm(jsAdMob(Obj).Owner).UpdateJNI(gApp);
+     jsAdMob(Obj).GenEvent_OnAdMobRewardedFailedToShow(Obj, errorCode);
   end;
 end;
 
@@ -1796,7 +1827,7 @@ begin
   end;
 end;
 
-Procedure Java_Event_pOnClickGeneric(env: PJNIEnv; this: jobject; Obj: TObject; Value: integer);
+Procedure Java_Event_pOnClickGeneric(env: PJNIEnv; this: jobject; Obj: TObject);
 begin
   //----update global "gApp": to whom it may concern------
   gApp.Jni.jEnv:= env;
@@ -2296,17 +2327,6 @@ begin
       pastitle:= string( env^.GetStringUTFChars(env,title,@_jBoolean) );
     end;
     jsTabLayout(Obj).GenEvent_OnSTabSelected(Obj, position, pastitle);
-  end;
-end;
-
-procedure Java_Event_pOnCustomCameraSurfaceCreated(env: PJNIEnv; this: jobject; Obj: TObject);
-begin
-  gApp.Jni.jEnv:= env;
-  gApp.Jni.jThis:= this;
-  if Obj is jCustomCamera then
-  begin
-    jForm(jCustomCamera(Obj).Owner).UpdateJNI(gApp);
-    jCustomCamera(Obj).GenEvent_OnCustomCameraSurfaceCreated(Obj);
   end;
 end;
 
@@ -3051,6 +3071,58 @@ begin
   begin
     jForm(jcToyTimerService(Sender).Owner).UpdateJNI(gApp);
     jcToyTimerService(Sender).GenEvent_OnToyTimerServicePullElapsedTime(Sender,elapsedTime);
+  end;
+end;
+
+//jBluetoothLowEnergy
+procedure Java_Event_pOnBluetoothLEConnected(env:PJNIEnv;this:JObject;Sender:TObject;deviceName:jString;deviceAddress:jString;bondState:integer);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if Sender is jBluetoothLowEnergy then
+  begin
+    jForm(jBluetoothLowEnergy(Sender).Owner).UpdateJNI(gApp);
+    jBluetoothLowEnergy(Sender).GenEvent_OnBluetoothLEConnected(Sender,GetString(env,deviceName),GetString(env,deviceAddress),bondState);
+  end;
+end;
+procedure Java_Event_pOnBluetoothLEScanCompleted(env:PJNIEnv;this:JObject;Sender:TObject;deviceNameArray:jstringArray;deviceAddressArray:jstringArray);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if Sender is jBluetoothLowEnergy then
+  begin
+    jForm(jBluetoothLowEnergy(Sender).Owner).UpdateJNI(gApp);
+    jBluetoothLowEnergy(Sender).GenEvent_OnBluetoothLEScanCompleted(Sender,GetDynArrayOfString(env,deviceNameArray),GetDynArrayOfString(env,deviceAddressArray));
+  end;
+end;
+procedure Java_Event_pOnBluetoothLEServiceDiscovered(env:PJNIEnv;this:JObject;Sender:TObject;serviceIndex:integer;serviceUUID:jString;characteristicUUIDArray:jstringArray);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if Sender is jBluetoothLowEnergy then
+  begin
+    jForm(jBluetoothLowEnergy(Sender).Owner).UpdateJNI(gApp);
+    jBluetoothLowEnergy(Sender).GenEvent_OnBluetoothLEServiceDiscovered(Sender,serviceIndex,GetString(env,serviceUUID),GetDynArrayOfString(env,characteristicUUIDArray));
+  end;
+end;
+procedure Java_Event_pOnBluetoothLECharacteristicChanged(env:PJNIEnv;this:JObject;Sender:TObject;strValue:jString;strCharacteristic:jString);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if Sender is jBluetoothLowEnergy then
+  begin
+    jForm(jBluetoothLowEnergy(Sender).Owner).UpdateJNI(gApp);
+    jBluetoothLowEnergy(Sender).GenEvent_OnBluetoothLECharacteristicChanged(Sender,GetString(env,strValue),GetString(env,strCharacteristic));
+  end;
+end;
+procedure Java_Event_pOnBluetoothLECharacteristicRead(env:PJNIEnv;this:JObject;Sender:TObject;strValue:jString;strCharacteristic:jString);
+begin
+  gApp.Jni.jEnv:= env;
+  gApp.Jni.jThis:= this;
+  if Sender is jBluetoothLowEnergy then
+  begin
+    jForm(jBluetoothLowEnergy(Sender).Owner).UpdateJNI(gApp);
+    jBluetoothLowEnergy(Sender).GenEvent_OnBluetoothLECharacteristicRead(Sender,GetString(env,strValue),GetString(env,strCharacteristic));
   end;
 end;
 
