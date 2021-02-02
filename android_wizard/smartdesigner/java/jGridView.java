@@ -42,6 +42,7 @@ class jGridViewCustomAdapter extends ArrayAdapter {
     boolean mDispatchOnDrawItemTextColor;
     boolean mDispatchOnDrawItemBitmap;
 
+    int mRowHeight;
     int mTextSizeTypedValue;
 
     private int itemsLayout;
@@ -56,6 +57,7 @@ class jGridViewCustomAdapter extends ArrayAdapter {
                 
         items = list;
         itemsLayout = itemslayout;
+        mRowHeight = 10;
         mDispatchOnDrawItemTextColor = true;
         mDispatchOnDrawItemBitmap = true;
 
@@ -79,6 +81,10 @@ class jGridViewCustomAdapter extends ArrayAdapter {
 
     public void SetDispatchOnDrawItemBitmap(boolean _value) {
         mDispatchOnDrawItemBitmap= _value;
+    }
+
+    public void SetRowHeight(int _h) {
+        mRowHeight = _h;
     }
 
     @Override
@@ -107,7 +113,7 @@ class jGridViewCustomAdapter extends ArrayAdapter {
 
         TextView textViewTitle = new TextView(context);
 
-        textViewTitle.setPadding(10, 10, 10, 10); //try improve here ... 17-jan-2015
+        textViewTitle.setPadding(10, mRowHeight, 10, mRowHeight); //try improve here ... 17-jan-2015
 
         ImageView imageViewItem = new ImageView(context);
         android.widget.RelativeLayout.LayoutParams imgParam = new android.widget.RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT); //w,h
@@ -232,7 +238,7 @@ public class jGridView extends GridView /*dummy*/ { //please, fix what GUI objec
 
         //Create the Custom Adapter Object
         gridViewCustomeAdapter = new jGridViewCustomAdapter(this.controls.activity, controls, pascalObj, android.R.layout.simple_list_item_1, 0, alist);
-
+        
         // Set the Adapter to GridView
         this.setAdapter(gridViewCustomeAdapter);
 
@@ -290,6 +296,10 @@ public class jGridView extends GridView /*dummy*/ { //please, fix what GUI objec
 
     public View GetView() {
         return this;
+    }
+
+    public void SetRowStyleHeight(int _h) {
+    	gridViewCustomeAdapter.SetRowHeight(_h);   
     }
 
     public void SetLParamWidth(int _w) {
