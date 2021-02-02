@@ -582,10 +582,12 @@ Sending Data: Extras vs. URI Parameters
         return "android.intent.action.DELETE";
     }
 
+    //[ifdef_api26up]
     //TODO Pascal
     public String GetActionManagerUnknownAppSourcesAsString() {
         return "Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES";
     }
+    //[endif_api26up]
 
     public void SetAction(int  _intentAction) {
 	  switch(_intentAction) { 
@@ -614,7 +616,9 @@ Sending Data: Extras vs. URI Parameters
 	    case 22: mIntent.setAction("android.appwidget.action.APPWIDGET_UPDATE"); break;
         case 23: mIntent.setAction("android.intent.ACTION_INSTALL_PACKAGE"); break;
         case 24: mIntent.setAction("android.intent.action.DELETE"); break;
+        //[ifdef_api26up]
         case 25: mIntent.setAction(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES); break;
+        //[endif_api26up]
         case 26: mIntent.setAction(Settings.ACTION_MANAGE_OVERLAY_PERMISSION); break;
 	  }
 	  
