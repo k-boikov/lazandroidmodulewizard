@@ -8,7 +8,7 @@ unit gridview;
 interface
 
 uses
-  Classes, SysUtils, And_jni, AndroidWidget, systryparent;
+  Classes, SysUtils, And_jni, AndroidWidget, systryparent, And_Log_h;
 
 const
   DEFAULT_COLCOUNT=4;
@@ -52,6 +52,7 @@ type
     FColCount: integer; {new name of FColumns confusing with TStringGrid}
     FRowCount: integer;
     FItemCount:integer;
+    FRowStyleHeight: integer;
     FItemsLayout: TGridItemLayout;
     // added by tintinux
     FCells: TCells;
@@ -93,6 +94,7 @@ type
     procedure SetViewParent(_viewgroup: jObject); override;
     procedure RemoveFromViewParent();  override;
     function GetView(): jObject; override;
+    procedure SetRowStyleHeight(_h: integer);
     procedure SetLParamWidth(_w: integer);
     procedure SetLParamHeight(_h: integer);
     procedure SetLeftTopRightBottomWidthHeight(_left: integer;
@@ -131,9 +133,12 @@ type
     procedure DeleteCol(const Col: integer);
     property Cells[ACol, ARow: integer]: string read GetCells write SetCells;
     property Images[ACol, ARow: integer]: string read GetImages write SetImages;
+    procedure SetLGravity(_value: TLayoutGravity);
   published
     property BackgroundColor: TARGBColorBridge read FColor write SetColor;
     property Columns: integer read FColCount write SetNumColumns; deprecated 'Please, use ColCount instead';
+    property GravityInParent: TLayoutGravity read FGravityInParent write SetLGravity;
+    property RowStyleHeight: integer read FRowStyleHeight write SetRowStyleHeight default 10;
     property ItemsLayout: TGridItemLayout read FItemsLayout write SetItemsLayout;
     property FontSize: Dword read FFontSize write SetFontSize;
     property FontColor: TARGBColorBridge read FFontColor write SetFontColor;
@@ -160,6 +165,7 @@ procedure jGridView_SetViewParent(env: PJNIEnv; _jgridview: JObject;
   _viewgroup: jObject);
 procedure jGridView_RemoveFromViewParent(env: PJNIEnv; _jgridview: JObject);
 function jGridView_GetView(env: PJNIEnv; _jgridview: JObject): jObject;
+procedure jGridView_SetRowStyleHeight(env: PJNIEnv; _jgridview: JObject; _h: integer);
 procedure jGridView_SetLParamWidth(env: PJNIEnv; _jgridview: JObject; _w: integer);
 procedure jGridView_SetLParamHeight(env: PJNIEnv; _jgridview: JObject; _h: integer);
 procedure jGridView_SetLeftTopRightBottomWidthHeight(env: PJNIEnv;
@@ -199,6 +205,7 @@ procedure jGridView_SetVerticalSpacing(env: PJNIEnv; _jgridview: JObject;
 procedure jGridView_SetSelection(env: PJNIEnv; _jgridview: JObject; _index: integer);
 procedure jGridView_SetStretchMode(env: PJNIEnv; _jgridview: JObject;
   _stretchMode: integer);
+procedure jGridView_SetFrameGravity(env: PJNIEnv; _jgridview: JObject; _value: integer);
 
 implementation
 
@@ -318,6 +325,9 @@ begin
 
    if FColCount <> -1 then
     jGridView_SetNumColumns(FjEnv, FjObject, FColCount);
+
+   if RowStyleHeight >= 0 then
+    jGridView_SetRowStyleHeight(FjEnv, FjObject, RowStyleHeight);
 
    View_SetVisible(FjEnv, FjObject, FVisible);
   end;
@@ -458,6 +468,14 @@ begin
     Result := jGridView_GetView(FjEnv, FjObject);
 end;
 
+procedure jGridView.SetRowStyleHeight(_h: integer);
+begin
+  //in designing component state: set value here...
+  FRowStyleHeight := _h;
+  if FInitialized then
+    jGridView_SetRowStyleHeight(FjEnv, FjObject, _h);
+end;
+
 procedure jGridView.SetLParamWidth(_w: integer);
 begin
   //in designing component state: set value here...
@@ -522,6 +540,14 @@ begin
   end;
 end;
 
+procedure jGridView.SetLGravity(_value: TLayoutGravity);
+begin
+  //in designing component state: set value here...
+  FGravityInParent:= _value;
+  if FInitialized then
+     jGridView_SetFrameGravity(FjEnv, FjObject, Ord(FGravityInParent));
+end;
+
 procedure jGridView.AddInternal(_item: string; _imgIdentifier: string);
 begin
   if FInitialized then
@@ -552,6 +578,9 @@ end;
 procedure jGridView.Clear();
 begin
   //in designing component state: set value here...
+  SetLength(FCells, 0);
+  FItemCount := 0;
+  FRowCount := 0;
   if FInitialized then
     jGridView_Clear(FjEnv, FjObject);
 end;
@@ -719,6 +748,7 @@ begin
   SetLength(FCells, L + 1);
   FCells[L].Item := Item;
   FCells[L].ImgIdentifier := ImgIdentifier;
+  FRowCount := L div FColCount + 1;
 end;
 
 procedure jGridView.ShiftValue ( const Dest, From : integer );
@@ -1051,6 +1081,18 @@ begin
   env^.DeleteLocalRef(env, jCls);
 end;
 
+procedure jGridView_SetRowStyleHeight(env: PJNIEnv; _jgridview: JObject; _h: integer);
+var
+  jParams: array[0..0] of jValue;
+  jMethod: jMethodID = nil;
+  jCls: jClass = nil;
+begin
+  jParams[0].i := _h;
+  jCls := env^.GetObjectClass(env, _jgridview);
+  jMethod := env^.GetMethodID(env, jCls, 'SetRowStyleHeight', '(I)V');
+  env^.CallVoidMethodA(env, _jgridview, jMethod, @jParams);
+  env^.DeleteLocalRef(env, jCls);
+end;
 
 procedure jGridView_SetLParamWidth(env: PJNIEnv; _jgridview: JObject; _w: integer);
 var
@@ -1427,6 +1469,19 @@ begin
   jParams[0].i := _stretchMode;
   jCls := env^.GetObjectClass(env, _jgridview);
   jMethod := env^.GetMethodID(env, jCls, 'SetStretchMode', '(I)V');
+  env^.CallVoidMethodA(env, _jgridview, jMethod, @jParams);
+  env^.DeleteLocalRef(env, jCls);
+end;
+
+procedure jGridView_SetFrameGravity(env: PJNIEnv; _jgridview: JObject; _value: integer);
+var
+  jParams: array[0..0] of jValue;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+begin
+  jParams[0].i:= _value;
+  jCls:= env^.GetObjectClass(env, _jgridview);
+  jMethod:= env^.GetMethodID(env, jCls, 'SetLGravity', '(I)V');
   env^.CallVoidMethodA(env, _jgridview, jMethod, @jParams);
   env^.DeleteLocalRef(env, jCls);
 end;
